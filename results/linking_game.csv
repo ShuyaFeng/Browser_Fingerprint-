@@ -1,0 +1,6 @@
+tracker,n_features,single_visit_uniqueness,link_tpr,link_fpr,link_margin
+Full fingerprint,11,0.4739,0.1621,0.0,0.1621
+GPU core,4,0.0867,0.7365,0.0073,0.7292
+User-agent,1,0.0316,0.4428,0.0023,0.4405
+Fonts,1,0.0559,0.6233,0.1561,0.4673
+Locale,2,0.0109,0.8428,0.0155,0.8273

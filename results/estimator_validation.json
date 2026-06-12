@@ -1,0 +1,93 @@
+{
+  "ground_truth": {
+    "true_minus_H": -6.321928094887363,
+    "miller_madow": {
+      "duplicate": -3.8644949746757065,
+      "partial": -2.831972966415366,
+      "independent": -1.275091951532593
+    },
+    "chao_shen": {
+      "duplicate": -6.235222765032033,
+      "partial": -4.296457608659502,
+      "independent": 0.059406861758443306
+    }
+  },
+  "null_sweep": [
+    {
+      "estimator": "miller_madow",
+      "N": 50000,
+      "real_gpu": -2.6362421509783522,
+      "floor_gpu": -1.5591074080192868,
+      "real_mean": -0.5662850471069846,
+      "floor_mean": -0.5852814953932343
+    },
+    {
+      "estimator": "miller_madow",
+      "N": 200000,
+      "real_gpu": -2.770987779253253,
+      "floor_gpu": -1.555015794227913,
+      "real_mean": -0.5644679751862068,
+      "floor_mean": -0.5895107015046614
+    },
+    {
+      "estimator": "miller_madow",
+      "N": 1000000,
+      "real_gpu": -2.8536737808059898,
+      "floor_gpu": -1.5475834690892547,
+      "real_mean": -0.561134119928504,
+      "floor_mean": -0.5916618232186056
+    },
+    {
+      "estimator": "chao_shen",
+      "N": 50000,
+      "real_gpu": -2.692204434795826,
+      "floor_gpu": -1.2217045891166893,
+      "real_mean": -0.5730991425229067,
+      "floor_mean": -0.5812945183055338
+    },
+    {
+      "estimator": "chao_shen",
+      "N": 200000,
+      "real_gpu": -2.801214869368434,
+      "floor_gpu": -0.383144869418854,
+      "real_mean": -0.5688945762535614,
+      "floor_mean": -0.3960716487619717
+    },
+    {
+      "estimator": "chao_shen",
+      "N": 1000000,
+      "real_gpu": -2.8747969092461565,
+      "floor_gpu": 0.1002392693538256,
+      "real_mean": -0.5623535068702948,
+      "floor_mean": -0.10359345992974504
+    }
+  ],
+  "headline": {
+    "miller_madow": {
+      "H": 14.717083730520361,
+      "sum_marg": 70.78561756665837,
+      "ratio_pct": 380.9758431955022
+    },
+    "chao_shen": {
+      "H": 14.98609696435095,
+      "sum_marg": 71.20214138125287,
+      "ratio_pct": 375.1213177829365
+    },
+    "extrapolated": {
+      "H_inf": 15.143493372610807,
+      "ratio_pct": 370.18306561966887
+    },
+    "gpu_cluster": {
+      "miller_madow": {
+        "marginal": 22.979620310056603,
+        "shapley": 5.7963387414885075,
+        "redundancy_pct": 74.77617705044565
+      },
+      "chao_shen": {
+        "marginal": 23.060459175044684,
+        "shapley": 5.849471312661628,
+        "redundancy_pct": 74.63419410576289
+      }
+    }
+  }
+}

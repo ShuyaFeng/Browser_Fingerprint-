@@ -1,12 +1,12 @@
+# Datasets (downloaded by scripts/download_data.sh; never committed)
+data/raw/
+data/processed/
+*.zip
+
+# Python artifacts
 __pycache__/
 *.pyc
-*.pyo
-.DS_Store
-.ipynb_checkpoints/
-*.egg-info/
+.pytest_cache/
 
-# Datasets (downloaded separately, not redistributed)
-data/
-
-# Generated outputs
-results/
+# Regenerable figure outputs (rebuild with scripts/replot_figures.py)
+results/figures/

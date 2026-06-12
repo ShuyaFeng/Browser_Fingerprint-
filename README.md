@@ -1,74 +1,87 @@
-# Browser Fingerprint Entropy Attribution
+# Where Does Browser Fingerprint Uniqueness Come From? — Research Artifact
 
-Shapley-value attribution of browser fingerprint entropy. We cast a fingerprint as
-a cooperative game where the value of a feature set is its joint entropy,
-`v(S) = H(F_S)`, and use Shapley values to decompose the joint entropy into
-per-feature contributions that provably sum to the whole, correctly discounting the
-redundancy that per-feature marginal entropies double-count.
+Anonymized artifact for the submission *"Where Does Browser Fingerprint
+Uniqueness Come From? A Shapley-Value Attribution of Entropy and Its
+Implications for Defense."*
 
-## Repository layout
+It contains the full analysis pipeline: bias-corrected entropy estimators
+(Miller–Madow and coverage-adjusted Chao–Shen), exact and Monte-Carlo Shapley
+solvers over the fingerprint entropy game, the Shapley interaction index, the
+defense audit by residual joint entropy, the re-identification bridge, the
+temporal/linking analyses, and every figure-generation script.
+
+## Layout
 
 ```
-src/                      core engine
-  entropy_fast.py         fast joint-entropy backend (numpy void-view + mixed-radix
-                          packing); Miller-Madow, Chao-Shen, and Grassberger
-                          estimators; 1/N entropy extrapolation
-  shapley_fast.py         exact (2^n) and Monte-Carlo Shapley values, pairwise
-                          interaction index, bootstrap CIs, efficiency check
-  entropy.py, shapley.py  pandas reference implementations (test baselines)
-  data_loader.py          dataset loading helpers
-
-scripts/                  experiments (each writes to results/)
-  run_experiment.py       main per-feature attribution and interactions
-  estimator_validation.py estimator ground-truth and independence-null validation
-  temporal_analysis.py    cross-session stability and the linking game (FPStalker)
-  who_remains_exposed.py  anonymity-set distribution and the rare-hardware tail
-  optimal_defense.py      defense selection (marginal/Shapley/greedy/optimal) and
-                          cluster-level Shapley
-  defense_analysis.py     residual-entropy audit of real defenses
-  entropy_migration.py    counterfactual entropy migration across a defense sequence
-  reidentification.py     uniqueness and k-anonymity bridge
-  sensitivity_analysis.py feature-selection robustness
-  cross_dataset.py        replication on a second corpus
-  interaction_ci.py       bootstrap confidence intervals for interactions
-  make_figures.py         render figures from results/
-  download_data.sh        fetch the datasets
-  preprocess_fpstalker.py parse the FPStalker SQL dump to a feature CSV
-
-tests/                    unit tests (pytest)
+src/                  Core library
+  entropy.py            Reference entropy estimators
+  entropy_fast.py       Fast estimators (mixed-radix packing, Chao-Shen, Miller-Madow)
+  shapley.py            Reference Shapley implementation
+  shapley_fast.py       Exact (2^n enumeration) and permutation Monte-Carlo solvers,
+                        pairwise Shapley interaction index
+  data_loader.py        Dataset loading and feature derivation
+scripts/              Analysis and figure scripts (see mapping below)
+tests/                Unit tests (estimators, solvers, efficiency axiom)
+results/              Precomputed outputs (CSV/JSON) from the paper's runs (300K sample)
+results_scale1M/      Outputs of the 1M-sample robustness run
+data/                 Dataset download target (see "Datasets" below)
 ```
 
 ## Setup
 
-```bash
+Python 3.9+:
+
+```
 pip install -r requirements.txt
 ```
 
-## Data
+## Quick start (no dataset download required)
 
-The datasets are not redistributed here. Fetch and preprocess them with:
+The repository ships the precomputed result tables, so you can verify the
+pipeline and regenerate every data-backed figure of the paper in seconds:
 
-```bash
-bash scripts/download_data.sh
-python scripts/preprocess_fpstalker.py
+```
+python -m pytest tests/            # estimator + solver unit tests
+python scripts/replot_figures.py   # rebuilds figures from results/*.csv
 ```
 
-This populates `data/` with the Li and Cao corpus and the FPStalker dataset.
+## Datasets
 
-## Running
+Both corpora are public; neither is redistributed here.
 
-```bash
-python scripts/run_experiment.py          # main attribution (300K sample)
-python scripts/estimator_validation.py    # estimator validation
-python scripts/temporal_analysis.py       # temporal attribution and linking game
-python scripts/optimal_defense.py         # defense selection and cluster Shapley
-python scripts/make_figures.py            # render all figures
-```
+- **Li & Cao (IMC 2020)** — primary corpus, 7.2M fingerprints.
+  `bash scripts/download_data.sh` downloads it from Zenodo
+  (record 7743719, ~3.7 GB compressed) into `data/raw/li_cao_imc2020/`.
+- **FPStalker (Vastel et al., S&P 2018)** — replication and temporal corpus.
+  Obtain `fingerprints.csv` from the authors' public release
+  (github.com/Spirals-Team/FPStalker) and place it in `data/raw/fpstalker/`,
+  then run `python scripts/preprocess_fpstalker.py`.
 
-Results and figures are written to `results/` (git-ignored).
+## Full reproduction: script-to-output mapping
 
-## Tests
+| Script | Produces |
+|---|---|
+| `run_experiment.py` | Shapley attribution + interaction matrix + device split (`shapley_attribution.csv`, `pairwise_interactions.csv`, `desktop_vs_mobile.csv`; figures `fig1`–`fig4` via `make_figures.py`) |
+| `defense_analysis.py` | defense and point-defense residual entropy (`defense_effectiveness.csv`, `point_defenses.csv`; `fig5`, `fig6`) |
+| `entropy_migration.py` | counterfactual defense-deployment sequence (`entropy_migration.csv`; `fig7`) |
+| `reidentification.py` | uniqueness and anonymity sets per defense, entropy-vs-uniqueness sweep (`reidentification.csv`, `entropy_uniqueness.csv`; `fig8`, `fig9`) |
+| `sensitivity_analysis.py` | random-subset and 25-feature sensitivity (`sensitivity_*.csv`; `fig10`) |
+| `cross_dataset.py` | Li & Cao vs. FPStalker replication (`cross_dataset.csv`; `fig11`) |
+| `estimator_validation.py` | ground-truth + shuffled-null estimator controls (`estimator_validation.json`; `fig12`) |
+| `temporal_analysis.py` | stability vs. one-shot Shapley, linking game (`temporal_stability.csv`, `linking_game.csv`; `fig13`) |
+| `optimal_defense.py` | k-feature selection rules, cluster-level Shapley (`optimal_defense.csv`, `cluster_shapley.csv`; `fig14`) |
+| `who_remains_exposed.py` | anonymity-set CDF, exposure by GPU rarity (`exposure.csv`; `fig15`) |
+| `interaction_ci.py` | bootstrap CIs for all pairwise interactions (`interaction_ci.json`) |
+| `make_overview.py` | framework overview figure (`fig0`) |
 
-```bash
-pytest tests/
-```
+Notes:
+- All sampling is seeded; re-running reproduces the paper's numbers exactly.
+- The exact solver enumerates all 2^18 feature subsets in minutes on a laptop;
+  `run_experiment.py --skip-interactions` skips the interaction matrix.
+- The Monte-Carlo solver is validated against the exact solver to within
+  1e-9 bits; the efficiency axiom (sum of Shapley values = joint entropy) is
+  checked at the end of every run.
+
+## License
+
+MIT (see LICENSE). Released anonymously for double-blind review.

@@ -1,0 +1,4 @@
+defense,n_neutralized,residual_entropy_bits,actual_removed_bits,pct_entropy_removed,naive_marginal_prediction,shapley_prediction,naive_overestimate_factor,shapley_accuracy_gap
+Tor Browser,18,0.0,14.137,100.0,70.206,14.137,4.97,0.0
+Firefox RFP,16,8.85,5.288,37.4,54.062,10.849,10.22,5.561
+Brave (farbling),6,10.01,4.127,29.2,39.539,8.821,9.58,4.694

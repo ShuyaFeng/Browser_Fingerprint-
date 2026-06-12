@@ -1,0 +1,6 @@
+defense,n_neutralized,residual_entropy_bits,actual_removed_bits,pct_entropy_removed,naive_marginal_prediction,shapley_prediction,naive_overestimate_factor,shapley_accuracy_gap
+Block Canvas only,1,14.065,0.072,0.5,6.579,1.209,91.22,1.137
+Block WebGL only,1,14.125,0.013,0.1,8.831,1.757,705.24,1.744
+Block Fonts only,1,13.74,0.397,2.8,8.033,1.891,20.25,1.495
+Block GPU cluster,3,13.399,0.738,5.2,22.722,4.497,30.79,3.759
+Block all hardware,7,12.061,2.076,14.7,31.894,6.881,15.36,4.805

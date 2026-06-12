@@ -1,0 +1,5 @@
+defense,n_remaining_features,residual_entropy_bits,unique_rate_pct,in_anon_set_ge2_pct,in_anon_set_ge10_pct,median_anon_set
+None (full FP),18,14.137,12.42,87.58,50.32,10.0
+Tor Browser,0,0.0,0.0,100.0,100.0,300000.0
+Firefox RFP,2,8.85,0.14,99.86,96.28,1100.0
+Brave (farbling),12,10.01,0.52,99.48,90.28,365.0

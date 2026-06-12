@@ -1,0 +1,26 @@
+{
+  "uniqueness_rate": 0.12415666666666667,
+  "share_unique_with_rare_gpu": 0.02762638601766585,
+  "buckets": [
+    {
+      "gpu_population": "1-9",
+      "user_share_pct": 1.4,
+      "uniqueness_rate_pct": 24.6
+    },
+    {
+      "gpu_population": "10-99",
+      "user_share_pct": 7.0,
+      "uniqueness_rate_pct": 20.1
+    },
+    {
+      "gpu_population": "100-999",
+      "user_share_pct": 20.8,
+      "uniqueness_rate_pct": 16.8
+    },
+    {
+      "gpu_population": "1000+",
+      "user_share_pct": 70.8,
+      "uniqueness_rate_pct": 10.1
+    }
+  ]
+}

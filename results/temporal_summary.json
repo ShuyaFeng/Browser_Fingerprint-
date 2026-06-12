@@ -1,0 +1,16 @@
+{
+  "attribution": {
+    "agent_oneshot": 3.324697656225008,
+    "agent_stability": 0.44282982791587,
+    "gpu_stability": 0.9107074569789675,
+    "gpu_share_oneshot": 26.915254225626875,
+    "gpu_share_durable": 31.787317468067545
+  },
+  "linking": {
+    "full_tpr": 0.1621,
+    "gpu_tpr": 0.7365,
+    "gpu_margin": 0.7292,
+    "ua_tpr": 0.4428,
+    "ua_uniq": 0.0316
+  }
+}

@@ -1,0 +1,12 @@
+feature,category,stability,shapley_oneshot,shapley_durable
+agent,browser,0.4428,3.3247,2.885
+jsFonts,fonts,0.6233,1.5914,2.2094
+canvastest,GPU,0.86,1.4969,2.0254
+fp2_webgl,GPU,0.8237,1.3453,2.0128
+resolution,screen,0.795,1.1092,1.4534
+timezone,locale,0.8772,1.0907,1.3651
+language,locale,0.9587,1.076,1.5461
+fp2_platform,OS,0.9595,0.7684,0.4294
+os,OS,0.9916,0.4725,0.7945
+gpu,GPU,0.9755,0.438,0.7034
+fp2_webglvendoe,GPU,0.9836,0.1937,0.2367

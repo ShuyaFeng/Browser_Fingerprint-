@@ -1,0 +1,7 @@
+stage,n_remaining,residual_entropy_bits,gpu_shapley_pct,hardware_shapley_pct,software_shapley_pct,gpu_shapley_bits
+S0: no defense,18,14.137,32.4,48.3,51.7,4.587
+S1: UA reduction,15,14.137,36.4,53.6,46.4,5.142
+S2: + locale,13,13.793,39.8,58.4,41.6,5.492
+S3: + Canvas,12,13.699,33.2,53.2,46.8,4.545
+S4: + fonts,11,12.822,41.0,68.8,31.2,5.254
+S5: + full software,2,8.85,100.0,100.0,0.0,8.85

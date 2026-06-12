@@ -1,0 +1,11 @@
+feature,shapley_desktop,shapley_mobile,diff
+jsFonts,3.2263,0.4054,2.8208
+fp2_webgl,2.4837,1.7846,0.6991
+gpu,1.9348,1.2229,0.7119
+hybridaudio,1.8261,0.3316,1.4945
+language,1.3587,1.2641,0.0946
+canvastest,1.3014,1.2623,0.0391
+agent,1.2026,2.7392,-1.5366
+timezone,0.5726,0.2414,0.3313
+fp2_pixelratio,0.5238,0.7845,-0.2607
+os,0.0966,0.179,-0.0824
