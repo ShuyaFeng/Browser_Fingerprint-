@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+.ipynb_checkpoints/
+*.egg-info/
+
+# Datasets (downloaded separately, not redistributed)
+data/
+
+# Generated outputs
+results/
