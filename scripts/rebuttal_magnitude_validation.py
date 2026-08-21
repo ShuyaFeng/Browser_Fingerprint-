@@ -79,7 +79,7 @@ def uniqueness_stats(fm, features):
     p = counts / N
     h = float(-np.sum(p * np.log2(p)))
     k = len(counts)
-    h += (k - 1) / (2 * N * np.log2(np.e))
+    h += (k - 1) / (2 * N * np.log(2))
     sizes = np.repeat(counts, counts)
     median_aset = float(np.median(sizes))
     return {"unique_rate": unique_rate, "entropy_bits": h,
@@ -199,6 +199,25 @@ def main():
     avg_within_rho = samesize_df["spearman"].mean()
     print(f"\n  Average within-k Spearman: {avg_within_rho:.4f}")
 
+    # --- Table 3: Within-k Spearman for all k values ---
+    table3_rows = list(samesize_rows)
+    computed_ks = {r["k"] for r in samesize_rows}
+    for k in range(1, len(FEATURES) + 1):
+        if k not in computed_ks:
+            dfk = df_pos[df_pos["n_features"] == k]
+            table3_rows.append({"k": k, "n_subsets": len(dfk),
+                                "spearman": float("nan"), "p_value": float("nan")})
+    table3_rows.sort(key=lambda r: r["k"])
+    table3_df = pd.DataFrame(table3_rows)
+    table3_df = table3_df.rename(columns={
+        "k": "Subset size k",
+        "n_subsets": "# Subsets sampled",
+        "spearman": "Spearman rho",
+        "p_value": "p-value",
+    })
+    table3_df.to_csv(f"{RESULTS_DIR}/table3_within_k_spearman.csv", index=False)
+    print(f"  Table 3 saved: table3_within_k_spearman.csv")
+
     # ------------------------------------------------------------------
     # (e) Partial correlation controlling for |S|
     # ------------------------------------------------------------------
@@ -238,51 +257,54 @@ def main():
     # ------------------------------------------------------------------
     print("\n[3] Generating figures...")
 
-    # Fig A: Calibration plot
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4.5))
-
-    sc = ax1.scatter(df_pos["entropy_bits"], df_pos["log_unique"],
-                     c=df_pos["n_features"], cmap="viridis", s=18, alpha=0.6,
-                     zorder=2)
+    # --- Figure 3: Calibration scatter plot ---
+    fig, ax = plt.subplots(figsize=(7, 5.5))
+    sc = ax.scatter(df_pos["entropy_bits"], df_pos["log_unique"],
+                    c=df_pos["n_features"], cmap="viridis", s=18, alpha=0.6,
+                    zorder=2)
     x_line = np.linspace(0, df_pos["entropy_bits"].max() * 1.05, 100)
-    ax1.plot(x_line, a_ols * x_line + b_ols, "r-", lw=1.5, alpha=0.8,
-             label=f"OLS: slope={a_ols:.3f}, RMSE={rmse:.2f}")
-    # Add defense points
+    ax.plot(x_line, a_ols * x_line + b_ols, "r-", lw=1.5, alpha=0.8,
+            label=f"OLS: slope={a_ols:.3f}, RMSE={rmse:.2f}")
     for _, row in df_def.iterrows():
         if row["unique_rate"] > 0:
-            ax1.plot(row["entropy_bits"], np.log2(row["unique_rate"]),
-                     "D", color="red", markersize=8, zorder=5)
-            ax1.annotate(row["defense"], (row["entropy_bits"],
-                         np.log2(row["unique_rate"])),
-                         fontsize=6, xytext=(5, 5),
-                         textcoords="offset points")
-    cb = fig.colorbar(sc, ax=ax1)
+            ax.plot(row["entropy_bits"], np.log2(row["unique_rate"]),
+                    "D", color="red", markersize=8, zorder=5)
+            ax.annotate(row["defense"], (row["entropy_bits"],
+                        np.log2(row["unique_rate"])),
+                        fontsize=7, xytext=(5, 5),
+                        textcoords="offset points")
+    cb = fig.colorbar(sc, ax=ax)
     cb.set_label("|S| (# features)")
-    ax1.set_xlabel("Residual entropy H(F_S) [bits]")
-    ax1.set_ylabel("log₂(unique rate)")
-    ax1.set_title("Calibration: entropy → log uniqueness", fontsize=10)
-    ax1.legend(fontsize=7)
-    ax1.grid(alpha=0.3)
-
-    # Fig B: Within-k Spearman
-    ax2.bar(samesize_df["k"], samesize_df["spearman"], color="#1f77b4",
-            alpha=0.8)
-    ax2.axhline(avg_within_rho, color="red", ls="--", lw=1,
-                label=f"mean = {avg_within_rho:.3f}")
-    ax2.axhline(rho_all, color="gray", ls=":", lw=1,
-                label=f"overall ρ = {rho_all:.3f}")
-    ax2.set_xlabel("Feature subset size k")
-    ax2.set_ylabel("Spearman ρ (entropy vs unique_rate)")
-    ax2.set_title("Within-cardinality correlation", fontsize=10)
-    ax2.legend(fontsize=7)
-    ax2.grid(alpha=0.3)
-    ax2.set_ylim(0, 1.05)
-
+    ax.set_xlabel("Residual entropy H(F_S) [bits]")
+    ax.set_ylabel("log₂(unique rate)")
+    ax.set_title("Calibration: entropy → log uniqueness", fontsize=11)
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
     plt.tight_layout()
-    plt.savefig(f"{RESULTS_DIR}/figures/fig_calibration.pdf")
-    plt.savefig(f"{RESULTS_DIR}/figures/fig_calibration.png", dpi=150)
+    plt.savefig(f"{RESULTS_DIR}/figures/fig3_calibration.pdf")
+    plt.savefig(f"{RESULTS_DIR}/figures/fig3_calibration.png", dpi=150)
     plt.close()
-    print("  saved fig_calibration.pdf/png")
+    print("  Figure 3 saved: fig3_calibration.pdf/png")
+
+    # --- Figure 4: Within-k Spearman bar chart ---
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    ax.bar(samesize_df["k"], samesize_df["spearman"], color="#1f77b4",
+           alpha=0.8)
+    ax.axhline(avg_within_rho, color="red", ls="--", lw=1,
+               label=f"mean = {avg_within_rho:.3f}")
+    ax.axhline(rho_all, color="gray", ls=":", lw=1,
+               label=f"overall ρ = {rho_all:.3f}")
+    ax.set_xlabel("Feature subset size k")
+    ax.set_ylabel("Spearman ρ (entropy vs unique_rate)")
+    ax.set_title("Within-cardinality correlation", fontsize=11)
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
+    ax.set_ylim(0, 1.05)
+    plt.tight_layout()
+    plt.savefig(f"{RESULTS_DIR}/figures/fig4_within_k_spearman.pdf")
+    plt.savefig(f"{RESULTS_DIR}/figures/fig4_within_k_spearman.png", dpi=150)
+    plt.close()
+    print("  Figure 4 saved: fig4_within_k_spearman.pdf/png")
 
     # ------------------------------------------------------------------
     # Headline for rebuttal

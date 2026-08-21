@@ -25,6 +25,10 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from scipy.stats import spearmanr
+import matplotlib
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
+import matplotlib.pyplot as plt
 
 from src.entropy_fast import FeatureMatrix, _joint_counts
 
@@ -32,6 +36,7 @@ from src.entropy_fast import FeatureMatrix, _joint_counts
 DATA_PATH = "data/raw/li_cao_imc2020/final_with_header.csv"
 RESULTS_DIR = "results/rebuttal"
 os.makedirs(RESULTS_DIR, exist_ok=True)
+os.makedirs(f"{RESULTS_DIR}/figures", exist_ok=True)
 
 FEATURES_MAIN = [
     "jsFonts", "fp2_webgl", "canvastest", "hybridaudio", "agent",
@@ -44,6 +49,18 @@ FEATURES_INTERACTION = [
     "jsFonts", "fp2_webgl", "canvastest", "hybridaudio",
     "agent", "gpu", "language", "fp2_pixelratio", "timezone", "os",
 ]
+
+FEATURE_CATEGORY = {
+    "jsFonts": "OS/fonts", "fp2_webgl": "hardware/GPU",
+    "canvastest": "hardware/GPU", "hybridaudio": "hardware/audio",
+    "agent": "browser/UA", "gpu": "hardware/GPU",
+    "language": "browser/locale", "fp2_pixelratio": "display",
+    "browserversion": "browser/UA", "osversion": "OS/version",
+    "timezone": "browser/locale", "browser": "browser/UA",
+    "os": "OS/version", "cpucores": "hardware/CPU",
+    "fp2_colordepth": "display", "fp2_platform": "OS/platform",
+    "encoding": "browser/locale", "doNotTrack": "privacy",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -371,6 +388,136 @@ def main():
     }
     with open(f"{RESULTS_DIR}/minentropy_summary.json", "w") as fp:
         json.dump(summary, fp, indent=2)
+
+    # ------------------------------------------------------------------
+    # Tables and Figures for paper
+    # ------------------------------------------------------------------
+    print("\n" + "=" * 70)
+    print("  [4] Generating tables and figures...")
+    print("=" * 70)
+
+    # --- Table 1: Shannon vs Min-entropy Shapley values ---
+    table1_rows = []
+    for f in sorted(FEATURES_MAIN, key=lambda x: -shannon_phi[x]):
+        table1_rows.append({
+            "Feature": f,
+            "Category": FEATURE_CATEGORY.get(f, ""),
+            "Shannon Shapley (bits)": round(shannon_phi[f], 3),
+            "Min-entropy Shapley (bits)": round(phi_me[f], 3),
+            "Vulnerability Shapley": round(phi_v[f], 6),
+            "Shannon Rank": ranking["shannon_rank"].index(f) + 1,
+            "Min-entropy Rank": ranking["minentropy_rank"].index(f) + 1,
+        })
+    table1_df = pd.DataFrame(table1_rows)
+    table1_df.to_csv(f"{RESULTS_DIR}/table1_shapley_comparison.csv", index=False)
+    print(f"  Table 1 saved: table1_shapley_comparison.csv")
+    print(f"  Spearman rank correlation (Shannon vs Min-entropy): "
+          f"ρ = {ranking['spearman_shannon_vs_minentropy']:.4f}")
+
+    # --- Table 2: Pairwise Interaction Comparison ---
+    table2_rows = []
+    for (fi, fj), val_me in sorted(ixn_me.items(), key=lambda x: x[1]):
+        val_sh = shannon_ixn.get((fi, fj), shannon_ixn.get((fj, fi), 0.0))
+        type_sh = ("synergy" if val_sh > 0.05 else
+                   "redundancy" if val_sh < -0.05 else "independent")
+        type_me = ("synergy" if val_me > 0.01 else
+                   "redundancy" if val_me < -0.01 else "independent")
+        table2_rows.append({
+            "Feature i": fi, "Feature j": fj,
+            "Shannon I(i,j)": round(val_sh, 4),
+            "Min-entropy I(i,j)": round(val_me, 4),
+            "Shannon Type": type_sh,
+            "Min-entropy Type": type_me,
+        })
+    table2_df = pd.DataFrame(table2_rows)
+    table2_df.to_csv(f"{RESULTS_DIR}/table2_interaction_comparison.csv", index=False)
+    max_synergy_me = max(ixn_me.values())
+    print(f"  Table 2 saved: table2_interaction_comparison.csv")
+    print(f"  Min-entropy synergistic pairs: {n_synergy_me}/{n_total}, "
+          f"max synergy = {max_synergy_me:.4f} bits")
+
+    # --- Figure 1: Side-by-side interaction heatmaps ---
+    from matplotlib.colors import TwoSlopeNorm
+
+    n_f = len(FEATURES_INTERACTION)
+    mat_sh = np.zeros((n_f, n_f))
+    mat_me_hm = np.zeros((n_f, n_f))
+    for (fi, fj), val_me_pair in ixn_me.items():
+        i = FEATURES_INTERACTION.index(fi)
+        j = FEATURES_INTERACTION.index(fj)
+        mat_me_hm[i, j] = val_me_pair
+        mat_me_hm[j, i] = val_me_pair
+        val_sh = shannon_ixn.get((fi, fj), shannon_ixn.get((fj, fi), 0.0))
+        mat_sh[i, j] = val_sh
+        mat_sh[j, i] = val_sh
+
+    all_ixn_vals = np.concatenate([mat_sh.ravel(), mat_me_hm.ravel()])
+    vmin = min(all_ixn_vals.min(), -3.0)
+    vmax = max(all_ixn_vals.max(), 0.5)
+    norm = TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+    im1 = ax1.imshow(mat_sh, cmap="RdBu_r", norm=norm, aspect="equal")
+    ax1.set_xticks(range(n_f))
+    ax1.set_yticks(range(n_f))
+    ax1.set_xticklabels(FEATURES_INTERACTION, rotation=45, ha="right", fontsize=7)
+    ax1.set_yticklabels(FEATURES_INTERACTION, fontsize=7)
+    ax1.set_title("Shannon Entropy", fontsize=11)
+    for i in range(n_f):
+        for j in range(n_f):
+            if i != j:
+                ax1.text(j, i, f"{mat_sh[i, j]:.2f}", ha="center",
+                         va="center", fontsize=5)
+
+    im2 = ax2.imshow(mat_me_hm, cmap="RdBu_r", norm=norm, aspect="equal")
+    ax2.set_xticks(range(n_f))
+    ax2.set_yticks(range(n_f))
+    ax2.set_xticklabels(FEATURES_INTERACTION, rotation=45, ha="right", fontsize=7)
+    ax2.set_yticklabels(FEATURES_INTERACTION, fontsize=7)
+    ax2.set_title("Rényi Min-entropy", fontsize=11)
+    for i in range(n_f):
+        for j in range(n_f):
+            if i != j:
+                ax2.text(j, i, f"{mat_me_hm[i, j]:.2f}", ha="center",
+                         va="center", fontsize=5)
+
+    fig.colorbar(im2, ax=[ax1, ax2],
+                 label="Interaction (blue=redundancy, red=synergy)",
+                 shrink=0.8, pad=0.02)
+    plt.tight_layout()
+    plt.savefig(f"{RESULTS_DIR}/figures/fig1_interaction_heatmaps.pdf")
+    plt.savefig(f"{RESULTS_DIR}/figures/fig1_interaction_heatmaps.png", dpi=150)
+    plt.close()
+    print("  Figure 1 saved: fig1_interaction_heatmaps.pdf/png")
+
+    # --- Figure 2: Feature ranking scatter plot ---
+    fig, ax = plt.subplots(figsize=(7, 6))
+    s_vals = [shannon_phi[f] for f in FEATURES_MAIN]
+    m_vals = [phi_me[f] for f in FEATURES_MAIN]
+    ax.scatter(s_vals, m_vals, s=50, c="#1f77b4", zorder=3)
+    for f, sx, mx in zip(FEATURES_MAIN, s_vals, m_vals):
+        ax.annotate(f, (sx, mx), fontsize=6, xytext=(4, 4),
+                    textcoords="offset points")
+
+    all_v = s_vals + m_vals
+    lo = min(all_v) - 0.1
+    hi = max(all_v) + 0.1
+    ax.plot([lo, hi], [lo, hi], "k--", lw=0.8, alpha=0.5, label="y = x")
+    ax.set_xlabel("Shannon Shapley value (bits)")
+    ax.set_ylabel("Min-entropy Shapley value (bits)")
+    ax.set_title("Feature Ranking: Shannon vs Min-entropy")
+    ax.annotate(f"ρ = {ranking['spearman_shannon_vs_minentropy']:.3f}",
+                xy=(0.95, 0.95), xycoords="axes fraction", fontsize=11,
+                ha="right", va="top",
+                bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.8))
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(f"{RESULTS_DIR}/figures/fig2_ranking_scatter.pdf")
+    plt.savefig(f"{RESULTS_DIR}/figures/fig2_ranking_scatter.png", dpi=150)
+    plt.close()
+    print("  Figure 2 saved: fig2_ranking_scatter.pdf/png")
 
     # --- Key headline for rebuttal ---
     print("\n" + "=" * 70)
